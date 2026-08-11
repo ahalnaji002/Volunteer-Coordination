@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Task extends Model
 {
+    protected $fillable = [
+        'name',
+    ];
+
     public function assignments(): HasMany
     {
         return $this->hasMany(Assignment::class);
