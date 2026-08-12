@@ -24,6 +24,7 @@ class StoreTaskRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255|unique:tasks,name',
+            'description' => 'nullable|string',
         ];
     }
 }
