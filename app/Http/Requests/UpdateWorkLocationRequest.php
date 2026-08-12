@@ -24,6 +24,7 @@ class UpdateWorkLocationRequest extends FormRequest
     {
         return [
             'name' => 'sometimes|required|string|max:255',
+            'address' => 'sometimes|nullable|string|max:255',
         ];
     }
 }

@@ -9,6 +9,7 @@ class WorkLocation extends Model
 {
     protected $fillable = [
         'name',
+        'address',
     ];
 
     public function assignments(): HasMany
