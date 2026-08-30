@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\WorkLocationController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\VolunteerController;
+use App\Http\Controllers\WorkLocationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,8 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
+    Route::get('/my-assignments', [AssignmentController::class, 'myAssignments']);
+
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/user', function (Request $request) {
@@ -19,7 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/me', [VolunteerController::class, 'me']);
-    
+
     Route::match(['put', 'patch'], '/me', [VolunteerController::class, 'updateMe']);
 
     // Any authenticated user
@@ -38,5 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->except(['index', 'show']);
 
         Route::apiResource('volunteers', VolunteerController::class);
+
+        Route::apiResource('assignments', AssignmentController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
     });
 });
