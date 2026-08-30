@@ -196,3 +196,89 @@ Manual Postman verification has been completed for the main CRUD flows, role-bas
 ## Production Safety
 
 Use `APP_ENV=production` and `APP_DEBUG=false`, replace the sample passwords, and run `php artisan optimize:clear` after environment changes. Never commit `.env` or live access tokens.
+
+## Deployment on Render
+
+The production layout uses three Render resources defined in `render.yaml`:
+
+- `volunteer-coordination-api`: Docker Web Service running Laravel with Apache and PHP 8.2
+- `volunteer-coordination-frontend`: Static Site built from `frontend/`
+- `volunteer-coordination-db`: managed PostgreSQL database connected to Laravel over Render's private network
+
+### PostgreSQL
+
+Create the database through the Blueprint or in the Render dashboard. Keep the database in the same region as the backend and use its internal connection URL. The Blueprint maps that URL to `DATABASE_URL`; Laravel also continues to support the individual `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` variables.
+
+Do not run seeders automatically in production. Run `php artisan db:seed` manually only if production sample accounts are explicitly wanted.
+
+### Laravel Web Service
+
+Use these service settings when configuring the backend manually instead of using the Blueprint:
+
+| Setting | Value |
+| ------- | ----- |
+| Runtime | Docker |
+| Root directory | Repository root (leave blank) |
+| Dockerfile | `./Dockerfile` |
+| Docker build context | `.` |
+| Health check path | `/up` |
+
+Set these backend environment variables in Render:
+
+| Variable | Production value |
+| -------- | ---------------- |
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_KEY` | Output from `php artisan key:generate --show` |
+| `APP_URL` | The backend origin, such as `https://BACKEND-SERVICE.onrender.com` |
+| `DB_CONNECTION` | `pgsql` |
+| `DATABASE_URL` | Render PostgreSQL internal connection URL |
+| `RUN_MIGRATIONS` | `true` to run pending migrations before Apache starts |
+| `CORS_ALLOWED_ORIGINS` | The frontend origin, such as `https://FRONTEND-SITE.onrender.com` |
+| `LOG_CHANNEL` | `stderr` |
+| `LOG_LEVEL` | `info` |
+
+Generate the Laravel key locally and paste the complete output into Render; never add it to a repository file:
+
+```bash
+php artisan key:generate --show
+```
+
+The Blueprint sets `RUN_MIGRATIONS=true`, which runs this command before Apache starts:
+
+```bash
+php artisan migrate --force
+```
+
+This runs only pending migrations and is safe to repeat after a restart. It does not use `migrate:fresh` and does not seed data. Set `RUN_MIGRATIONS=false` if migrations will instead be run manually or through a paid Render pre-deploy command.
+
+### React Static Site
+
+Use these frontend settings when configuring the Static Site manually:
+
+| Setting | Value |
+| ------- | ----- |
+| Root directory | `frontend` |
+| Build command | `npm ci && npm run build` |
+| Publish directory | `dist` |
+| SPA rewrite | `/*` to `/index.html` |
+
+Set the frontend build environment variable to the deployed backend API URL:
+
+```env
+VITE_API_URL=https://BACKEND-SERVICE.onrender.com/api
+```
+
+The value is intentionally not hard-coded because Render assigns the final service hostname. Local development remains unchanged: the Vite server uses `/api` and proxies it to `http://127.0.0.1:8000`.
+
+`CORS_ALLOWED_ORIGINS` on the backend must exactly include the deployed frontend origin without the `/api` suffix. Multiple allowed origins can be supplied as a comma-separated list. The default configuration continues to allow `http://localhost:5173` and `http://127.0.0.1:5173` for local development.
+
+### Verification
+
+After both services are available:
+
+1. Open `https://BACKEND-SERVICE.onrender.com/up` and confirm a successful response.
+2. Open the frontend URL and sign in with an existing account.
+3. Verify authenticated API requests, role-specific navigation, and one read operation for each role.
+4. Refresh a nested frontend route and confirm the SPA loads instead of returning a 404.
+5. Review Render logs to confirm migrations completed and no CORS, database, or application errors are present.
