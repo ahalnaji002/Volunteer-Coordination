@@ -15,6 +15,7 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
+            $table->dropUnique(['email']);
             $table->dropColumn(['name', 'email']);
         });
     }
@@ -23,7 +24,8 @@ return new class extends Migration
     {
         Schema::table('volunteers', function (Blueprint $table) {
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('email');
+            $table->unique('email');
 
             $table->dropForeign(['user_id']);
             $table->dropColumn('user_id');

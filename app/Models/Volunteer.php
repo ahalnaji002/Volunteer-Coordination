@@ -12,7 +12,7 @@ class Volunteer extends Model
         'user_id',
         'phone',
         'national_id',
-];
+    ];
 
     public function user(): BelongsTo
     {

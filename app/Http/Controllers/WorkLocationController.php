@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Http\Requests\StoreWorkLocationRequest;
 use App\Http\Requests\UpdateWorkLocationRequest;
 use App\Http\Resources\WorkLocationResource;
@@ -13,8 +14,9 @@ class WorkLocationController extends Controller
      */
     public function index()
     {
-        return WorkLocationResource::collection(
-            WorkLocation::all()
+        return $this->success(
+            WorkLocationResource::collection(WorkLocation::all()),
+            'Work locations retrieved successfully.'
         );
     }
 
@@ -27,9 +29,11 @@ class WorkLocationController extends Controller
             $request->validated()
         );
 
-        return (new WorkLocationResource($workLocation))
-            ->response()
-            ->setStatusCode(201);
+        return $this->success(
+            new WorkLocationResource($workLocation),
+            'Work location created successfully.',
+            201
+        );
     }
 
     /**
@@ -37,7 +41,10 @@ class WorkLocationController extends Controller
      */
     public function show(WorkLocation $workLocation)
     {
-        return new WorkLocationResource($workLocation);
+        return $this->success(
+            new WorkLocationResource($workLocation),
+            'Work location retrieved successfully.'
+        );
     }
 
     /**
@@ -49,7 +56,10 @@ class WorkLocationController extends Controller
             $request->validated()
         );
 
-        return new WorkLocationResource($workLocation);
+        return $this->success(
+            new WorkLocationResource($workLocation),
+            'Work location updated successfully.'
+        );
     }
 
     /**
@@ -59,6 +69,6 @@ class WorkLocationController extends Controller
     {
         $workLocation->delete();
 
-        return response()->noContent();
+        return $this->success(message: 'Work location deleted successfully.');
     }
 }
