@@ -23,7 +23,7 @@ class UpdateTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|required|string|max:255|unique:tasks,name,' . $this->task->id,
+            'name' => 'sometimes|required|string|max:255|unique:tasks,name,'.$this->task->id,
             'description' => 'sometimes|nullable|string',
         ];
     }

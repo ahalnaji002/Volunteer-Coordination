@@ -21,7 +21,10 @@ class AssignmentController extends Controller
             'task',
         ])->get();
 
-        return AssignmentResource::collection($assignments);
+        return $this->success(
+            AssignmentResource::collection($assignments),
+            'Assignments retrieved successfully.'
+        );
     }
 
     /**
@@ -37,15 +40,24 @@ class AssignmentController extends Controller
             'task',
         ]);
 
-        return new AssignmentResource($assignment);
+        return $this->success(
+            new AssignmentResource($assignment),
+            'Assignment created successfully.',
+            201
+        );
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Assignment $assignment)
     {
-        //
+        $assignment->load(['volunteer.user', 'workLocation', 'task']);
+
+        return $this->success(
+            new AssignmentResource($assignment),
+            'Assignment retrieved successfully.'
+        );
     }
 
     /**
@@ -63,7 +75,10 @@ class AssignmentController extends Controller
             'task',
         ]);
 
-        return new AssignmentResource($assignment);
+        return $this->success(
+            new AssignmentResource($assignment),
+            'Assignment updated successfully.'
+        );
     }
 
     /**
@@ -73,9 +88,7 @@ class AssignmentController extends Controller
     {
         $assignment->delete();
 
-        return response()->json([
-            'message' => 'Assignment deleted successfully.',
-        ]);
+        return $this->success(message: 'Assignment deleted successfully.');
     }
 
     public function myAssignments(Request $request)
@@ -90,6 +103,9 @@ class AssignmentController extends Controller
             ])
             ->get();
 
-        return AssignmentResource::collection($assignments);
+        return $this->success(
+            AssignmentResource::collection($assignments),
+            'Your assignments were retrieved successfully.'
+        );
     }
 }

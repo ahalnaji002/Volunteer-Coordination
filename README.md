@@ -1,450 +1,174 @@
 # Volunteer Coordination API
 
-A RESTful backend API built with Laravel for managing volunteers, tasks, work locations, and volunteer profiles.
-
-The project was developed as part of practical backend training, with a focus on clean API architecture, authentication, authorization, validation, database relationships, and centralized error handling.
-
----
-
-## Features
-
-### Authentication
-
-- Volunteer registration
-- User login
-- Laravel Sanctum authentication
-- Token-based API access
-- Logout and token revocation
-- Role-based access:
-  - `admin`
-  - `volunteer`
-
-### Work Locations
-
-Authenticated users can:
-
-- List work locations
-- View a specific work location
-
-Admins can additionally:
-
-- Create work locations
-- Update work locations
-- Delete work locations
-
-### Tasks
-
-Authenticated users can:
-
-- List tasks
-- View a specific task
-
-Admins can additionally:
-
-- Create tasks
-- Update tasks
-- Delete tasks
-
-### Volunteers
-
-Admins have full CRUD access to volunteers:
-
-- List volunteers
-- Create volunteers
-- View a volunteer
-- Update a volunteer
-- Delete a volunteer
-
-When an Admin creates a volunteer, the linked user account is created inside a database transaction with:
-
-```text
-role = volunteer
-```
-
-The user account and volunteer profile are linked through `user_id`.
-
-### Volunteer Self-Service
-
-Authenticated volunteers can access their own profile using:
-
-```http
-GET /api/me
-PUT /api/me
-PATCH /api/me
-```
-
-A volunteer can update:
-
-- Name
-- Email
-- Phone
-
-A volunteer cannot update:
-
-- Role
-- `user_id`
-- National ID
-
-The profile is retrieved from the authenticated user relationship:
-
-```php
-$request->user()->volunteer
-```
-
-This prevents volunteers from accessing or modifying another volunteer's profile by supplying a different ID.
-
----
-
-## Authorization
-
-Admin-only endpoints are protected using custom middleware.
-
-Volunteer profile ownership is handled using `VolunteerPolicy`.
-
-A volunteer attempting to access Admin volunteer endpoints receives:
-
-```json
-{
-    "message": "Forbidden."
-}
-```
-
-with:
-
-```text
-403 Forbidden
-```
-
----
-
-## Validation
-
-The project uses dedicated Laravel Form Requests:
-
-```text
-StoreVolunteerRequest
-UpdateVolunteerRequest
-UpdateOwnProfileRequest
-```
-
-This separates Admin validation rules from the fields volunteers are allowed to update themselves.
-
-API responses for volunteers are formatted using:
-
-```text
-VolunteerResource
-```
-
----
-
-## Global API Error Handling
-
-API exceptions are handled centrally in:
-
-```text
-bootstrap/app.php
-```
-
-The API returns clean JSON responses without exposing:
-
-- Stack traces
-- Internal file paths
-- Line numbers
-- Exception implementation details
-
-Handled API responses include:
-
-| Status | Meaning |
-|---|---|
-| 401 | Unauthenticated |
-| 403 | Forbidden |
-| 404 | Resource not found |
-| 404 | Endpoint not found |
-| 405 | Method not allowed |
-| 422 | Validation failed |
-| 429 | Too many requests |
-| 500 | Server Error |
-
-Example:
-
-```json
-{
-    "message": "Resource not found."
-}
-```
-
----
-
-## Database Design
-
-Main application tables include:
-
-```text
-users
-volunteers
-tasks
-work_locations
-assignments
-personal_access_tokens
-```
-
-### User and Volunteer Relationship
-
-Each volunteer is linked to one user account.
-
-```text
-User 1 ───── 1 Volunteer
-```
-
-The `users` table stores account-related data:
-
-```text
-name
-email
-password
-role
-```
-
-The `volunteers` table stores volunteer-specific data:
-
-```text
-user_id
-phone
-national_id
-```
-
-`name` and `email` are intentionally stored only in the `users` table.
-
-This avoids duplicating the same information across `users` and `volunteers` and prevents inconsistencies between two copies of the same data.
-
-The `volunteers.user_id` field is:
-
-- Required
-- Unique
-- A foreign key to `users.id`
-
----
-
-## API Endpoints
-
-### Authentication
-
-```http
-POST /api/register
-POST /api/login
-POST /api/logout
-GET  /api/user
-```
-
-### Work Locations
-
-Authenticated users:
-
-```http
-GET /api/work-locations
-GET /api/work-locations/{id}
-```
-
-Admin only:
-
-```http
-POST       /api/work-locations
-PUT/PATCH  /api/work-locations/{id}
-DELETE     /api/work-locations/{id}
-```
-
-### Tasks
-
-Authenticated users:
-
-```http
-GET /api/tasks
-GET /api/tasks/{id}
-```
-
-Admin only:
-
-```http
-POST       /api/tasks
-PUT/PATCH  /api/tasks/{id}
-DELETE     /api/tasks/{id}
-```
-
-### Volunteers
-
-Admin only:
-
-```http
-GET        /api/volunteers
-POST       /api/volunteers
-GET        /api/volunteers/{id}
-PUT/PATCH  /api/volunteers/{id}
-DELETE     /api/volunteers/{id}
-```
-
-Volunteer self-service:
-
-```http
-GET        /api/me
-PUT/PATCH  /api/me
-```
-
----
+A Laravel REST API for coordinating volunteers across tasks and work locations. Administrators manage locations, tasks, volunteers, and assignments; volunteers can view shared reference data, maintain their own profile, and view only their own assignments.
 
 ## Technologies
 
-- PHP
-- Laravel
-- Laravel Sanctum
+- PHP 8.2+
+- Laravel 12 and Eloquent ORM
+- Laravel Sanctum token authentication
 - PostgreSQL
-- Eloquent ORM
-- REST API
-- Postman
-- Git
-- GitHub
-
----
+- PHPUnit
 
 ## Installation
 
-Clone the repository:
-
 ```bash
 git clone https://github.com/ahalnaji002/Volunteer-Coordination.git
-```
-
-Enter the project:
-
-```bash
 cd Volunteer-Coordination
-```
-
-Install dependencies:
-
-```bash
 composer install
-```
-
-Create the environment file:
-
-```bash
 cp .env.example .env
-```
-
-For Windows PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Generate the Laravel application key:
-
-```bash
 php artisan key:generate
 ```
 
-Configure PostgreSQL in `.env`:
+On Windows PowerShell, use `Copy-Item .env.example .env` instead of `cp`.
+
+Create a PostgreSQL database, then configure `.env`:
 
 ```env
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_DATABASE=volunteer_coordination
-DB_USERNAME=your_username
+DB_USERNAME=postgres
 DB_PASSWORD=your_password
 ```
 
-Run migrations:
+Prepare and run the application:
 
 ```bash
 php artisan migrate
-```
-
-Start the development server:
-
-```bash
+php artisan db:seed
 php artisan serve
 ```
 
-The API will normally run at:
+The default local base URL is `http://127.0.0.1:8000/api`.
 
-```text
-http://127.0.0.1:8000
-```
+## Sample Accounts
 
----
+`php artisan db:seed` creates or refreshes these reusable accounts without duplicating them:
+
+| Role      | Email                   | Password      |
+| --------- | ----------------------- | ------------- |
+| Admin     | `admin@example.com`     | `password123` |
+| Volunteer | `volunteer@example.com` | `password123` |
+
+These credentials are for local review only and must be changed in a real deployment.
 
 ## API Headers
 
-API clients should send:
+All requests should send:
 
 ```http
 Accept: application/json
+Content-Type: application/json
 ```
 
-Protected endpoints require a Sanctum Bearer token:
+Except for login, every endpoint also requires the Sanctum token returned by `POST /api/login`:
 
 ```http
 Authorization: Bearer YOUR_TOKEN
 ```
 
----
+## Endpoints
 
-## Testing
+| Method    | Route                                 | Access           | Description                                                 |
+| --------- | ------------------------------------- | ---------------- | ----------------------------------------------------------- |
+| POST      | `/api/login`                          | Public           | Log in as an admin or volunteer.                            |
+| POST      | `/api/logout`                         | Authenticated    | Revoke the current access token.                            |
+| GET       | `/api/user`                           | Authenticated    | Return the authenticated account.                           |
+| GET       | `/api/work-locations`                 | Admin, Volunteer | List work locations.                                        |
+| GET       | `/api/work-locations/{work_location}` | Admin, Volunteer | View a work location.                                       |
+| POST      | `/api/work-locations`                 | Admin            | Create a work location.                                     |
+| PUT/PATCH | `/api/work-locations/{work_location}` | Admin            | Update a work location.                                     |
+| DELETE    | `/api/work-locations/{work_location}` | Admin            | Delete a work location.                                     |
+| GET       | `/api/tasks`                          | Admin, Volunteer | List tasks.                                                 |
+| GET       | `/api/tasks/{task}`                   | Admin, Volunteer | View a task.                                                |
+| POST      | `/api/tasks`                          | Admin            | Create a task.                                              |
+| PUT/PATCH | `/api/tasks/{task}`                   | Admin            | Update a task.                                              |
+| DELETE    | `/api/tasks/{task}`                   | Admin            | Delete a task.                                              |
+| GET       | `/api/volunteers`                     | Admin            | List volunteers.                                            |
+| POST      | `/api/volunteers`                     | Admin            | Create a volunteer and linked account.                      |
+| GET       | `/api/volunteers/{volunteer}`         | Admin            | View a volunteer.                                           |
+| PUT/PATCH | `/api/volunteers/{volunteer}`         | Admin            | Update a volunteer.                                         |
+| DELETE    | `/api/volunteers/{volunteer}`         | Admin            | Delete an unassigned volunteer.                             |
+| GET       | `/api/assignments`                    | Admin            | List assignments.                                           |
+| POST      | `/api/assignments`                    | Admin            | Assign a volunteer to a task and location.                  |
+| GET       | `/api/assignments/{assignment}`       | Admin            | View an assignment.                                         |
+| PUT/PATCH | `/api/assignments/{assignment}`       | Admin            | Update an assignment.                                       |
+| DELETE    | `/api/assignments/{assignment}`       | Admin            | Delete an assignment.                                       |
+| GET       | `/api/me`                             | Volunteer        | View the authenticated volunteer's profile.                 |
+| PUT/PATCH | `/api/me`                             | Volunteer        | Update the authenticated volunteer's name, email, or phone. |
+| GET       | `/api/my-assignments`                 | Volunteer        | View only the authenticated volunteer's assignments.        |
 
-Run the Laravel test suite:
+Volunteer accounts are created by an administrator; there is no public registration endpoint. Self-service endpoints derive the volunteer from the authenticated user and do not accept a client-supplied `volunteer_id`.
+
+## Response Standard
+
+Model data is transformed through API Resources. Passwords, remember tokens, and other sensitive authentication fields are never returned.
+
+Successful response:
+
+```json
+{
+    "status": "success",
+    "message": "Tasks retrieved successfully.",
+    "data": [
+        {
+            "id": 1,
+            "name": "First aid",
+            "description": null,
+            "created_at": "2026-08-30T10:00:00.000000Z",
+            "updated_at": "2026-08-30T10:00:00.000000Z"
+        }
+    ]
+}
+```
+
+Error response:
+
+```json
+{
+    "status": "error",
+    "message": "Forbidden.",
+    "data": null
+}
+```
+
+Validation errors also include an `errors` object:
+
+```json
+{
+    "status": "error",
+    "message": "Validation failed.",
+    "data": null,
+    "errors": {
+        "name": ["The name field is required."]
+    }
+}
+```
+
+Central exception handling in `bootstrap/app.php` standardizes `401`, `403`, resource and endpoint `404`, `405`, `422`, `429`, and `500` API errors.
+
+## Testing and Review
+
+Run the automated suite and inspect the effective API routes:
 
 ```bash
 php artisan test
+php artisan route:list --path=api
 ```
 
-API endpoints, authentication, authorization, validation, and error responses were also tested using Postman.
+The feature suite covers core response envelopes, authentication, authorization, validation, missing resources/endpoints, and method errors.
 
----
+Postman files are included in the `postman/` directory:
 
-## Production Error Configuration
+- `postman/Volunteer-Coordination.postman_collection.json`
+- `postman/Volunteer-Coordination-Local.postman_environment.json`
 
-Production environments should disable Laravel debug output:
+The collection uses one shared `token` variable. Log in with the desired role before testing role-specific endpoints; the login script automatically updates the token in the environment.
 
-```env
-APP_ENV=production
-APP_DEBUG=false
-```
+Manual Postman verification has been completed for the main CRUD flows, role-based access, token revocation, duplicate assignment validation, and volunteer self-service.
 
-After changing environment configuration:
+## Production Safety
 
-```bash
-php artisan optimize:clear
-```
-
-This prevents sensitive server information from being exposed through API error responses.
-
----
-
-## Project Structure
-
-```text
-app/
-├── Http/
-│   ├── Controllers/
-│   ├── Middleware/
-│   ├── Requests/
-│   └── Resources/
-├── Models/
-└── Policies/
-
-bootstrap/
-└── app.php
-
-database/
-└── migrations/
-
-routes/
-└── api.php
-```
-
----
-
-## Repository
-
-https://github.com/ahalnaji002/Volunteer-Coordination
+Use `APP_ENV=production` and `APP_DEBUG=false`, replace the sample passwords, and run `php artisan optimize:clear` after environment changes. Never commit `.env` or live access tokens.

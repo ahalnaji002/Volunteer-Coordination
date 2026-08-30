@@ -7,7 +7,6 @@ use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
 
-
 class TaskController extends Controller
 {
     /**
@@ -15,8 +14,9 @@ class TaskController extends Controller
      */
     public function index()
     {
-        return TaskResource::collection(
-            Task::all()
+        return $this->success(
+            TaskResource::collection(Task::all()),
+            'Tasks retrieved successfully.'
         );
     }
 
@@ -29,9 +29,11 @@ class TaskController extends Controller
             $request->validated()
         );
 
-        return (new TaskResource($task))
-            ->response()
-            ->setStatusCode(201);
+        return $this->success(
+            new TaskResource($task),
+            'Task created successfully.',
+            201
+        );
     }
 
     /**
@@ -39,7 +41,10 @@ class TaskController extends Controller
      */
     public function show(Task $task)
     {
-        return new TaskResource($task);
+        return $this->success(
+            new TaskResource($task),
+            'Task retrieved successfully.'
+        );
     }
 
     /**
@@ -51,7 +56,10 @@ class TaskController extends Controller
             $request->validated()
         );
 
-        return new TaskResource($task);
+        return $this->success(
+            new TaskResource($task),
+            'Task updated successfully.'
+        );
     }
 
     /**
@@ -61,6 +69,6 @@ class TaskController extends Controller
     {
         $task->delete();
 
-        return response()->noContent();
+        return $this->success(message: 'Task deleted successfully.');
     }
 }

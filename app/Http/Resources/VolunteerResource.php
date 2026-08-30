@@ -20,7 +20,7 @@ class VolunteerResource extends JsonResource
             'email' => $this->user?->email,
             'phone' => $this->phone,
             'national_id' => $this->national_id,
-            'assignments' => $this->whenLoaded('assignments'),
+            'assignments' => AssignmentResource::collection($this->whenLoaded('assignments')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

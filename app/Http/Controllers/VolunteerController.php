@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Http\Request;
 use App\Http\Requests\StoreVolunteerRequest;
-use App\Http\Requests\UpdateVolunteerRequest;
 use App\Http\Requests\UpdateOwnProfileRequest;
+use App\Http\Requests\UpdateVolunteerRequest;
 use App\Http\Resources\VolunteerResource;
 use App\Models\User;
 use App\Models\Volunteer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class VolunteerController extends Controller
 {
@@ -20,9 +20,17 @@ class VolunteerController extends Controller
      */
     public function index()
     {
-        $volunteers = Volunteer::with(['user', 'assignments'])->get();
+        $volunteers = Volunteer::with([
+            'user',
+            'assignments.volunteer.user',
+            'assignments.workLocation',
+            'assignments.task',
+        ])->get();
 
-        return VolunteerResource::collection($volunteers);
+        return $this->success(
+            VolunteerResource::collection($volunteers),
+            'Volunteers retrieved successfully.'
+        );
     }
 
     /**
@@ -49,9 +57,11 @@ class VolunteerController extends Controller
 
         $volunteer->load('user');
 
-        return (new VolunteerResource($volunteer))
-            ->response()
-            ->setStatusCode(201);
+        return $this->success(
+            new VolunteerResource($volunteer),
+            'Volunteer created successfully.',
+            201
+        );
     }
 
     /**
@@ -61,7 +71,10 @@ class VolunteerController extends Controller
     {
         $volunteer->load('user');
 
-        return new VolunteerResource($volunteer);
+        return $this->success(
+            new VolunteerResource($volunteer),
+            'Volunteer retrieved successfully.'
+        );
     }
 
     /**
@@ -95,7 +108,10 @@ class VolunteerController extends Controller
 
         $volunteer->refresh()->load('user');
 
-        return new VolunteerResource($volunteer);
+        return $this->success(
+            new VolunteerResource($volunteer),
+            'Volunteer updated successfully.'
+        );
     }
 
     /**
@@ -104,9 +120,10 @@ class VolunteerController extends Controller
     public function destroy(Volunteer $volunteer)
     {
         if ($volunteer->assignments()->exists()) {
-            return response()->json([
-                'message' => 'Volunteer cannot be deleted because they have assignments.'
-            ], 409);
+            return $this->error(
+                'Volunteer cannot be deleted because they have assignments.',
+                409
+            );
         }
 
         DB::transaction(function () use ($volunteer) {
@@ -119,34 +136,31 @@ class VolunteerController extends Controller
             }
         });
 
-        return response()->noContent();
+        return $this->success(message: 'Volunteer deleted successfully.');
     }
 
-    
     public function me(Request $request)
     {
         $volunteer = $request->user()->volunteer;
 
         if (! $volunteer) {
-            return response()->json([
-                'message' => 'Volunteer profile not found.'
-            ], 404);
+            return $this->error('Volunteer profile not found.', 404);
         }
 
         $volunteer->load('user');
 
-        return new VolunteerResource($volunteer);
+        return $this->success(
+            new VolunteerResource($volunteer),
+            'Profile retrieved successfully.'
+        );
     }
-
 
     public function updateMe(UpdateOwnProfileRequest $request)
     {
         $volunteer = $request->user()->volunteer;
 
         if (! $volunteer) {
-            return response()->json([
-                'message' => 'Volunteer profile not found.'
-            ], 404);
+            return $this->error('Volunteer profile not found.', 404);
         }
 
         Gate::authorize('update', $volunteer);
@@ -174,6 +188,9 @@ class VolunteerController extends Controller
 
         $volunteer->refresh()->load('user');
 
-        return new VolunteerResource($volunteer);
+        return $this->success(
+            new VolunteerResource($volunteer),
+            'Profile updated successfully.'
+        );
     }
 }
