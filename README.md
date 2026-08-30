@@ -9,6 +9,7 @@ A Laravel REST API for coordinating volunteers across tasks and work locations. 
 - Laravel Sanctum token authentication
 - PostgreSQL
 - PHPUnit
+- React 19, Vite 7, Tailwind CSS 4, React Router, Axios, and Lucide icons (optional frontend)
 
 ## Installation
 
@@ -42,6 +43,20 @@ php artisan serve
 ```
 
 The default local base URL is `http://127.0.0.1:8000/api`.
+
+## Frontend Setup
+
+Install and start the optional frontend in a second terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. The Vite development server proxies `/api` requests to Laravel at `http://127.0.0.1:8000`. To use a different API URL, copy `frontend/.env.example` to `frontend/.env` and set `VITE_API_URL`.
+
+Create a production frontend bundle with `npm run build`. The output is written to `frontend/dist`.
 
 ## Sample Accounts
 
@@ -101,6 +116,15 @@ Authorization: Bearer YOUR_TOKEN
 | GET       | `/api/my-assignments`                 | Volunteer        | View only the authenticated volunteer's assignments.        |
 
 Volunteer accounts are created by an administrator; there is no public registration endpoint. Self-service endpoints derive the volunteer from the authenticated user and do not accept a client-supplied `volunteer_id`.
+
+## Frontend Features
+
+- Sanctum Bearer-token login, session restoration, logout, protected routes, and role-based navigation
+- Admin dashboard and CRUD screens for work locations, tasks, volunteers, and assignments
+- Volunteer dashboard, editable profile, personal assignments, and read-only task and location lists
+- Laravel validation messages, loading and empty states, success/error feedback, and delete confirmation
+
+The frontend stores the training-project access token in browser `localStorage`. Use the seeded sample accounts above to test both roles.
 
 ## Response Standard
 
